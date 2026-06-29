@@ -8,7 +8,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-gaegu), sans-serif; /*--font-gamja*/
+  --font-sans: var(--font-gaegu), serif; /*--font-gamja*/ /*--font-gaegu*/
   --font-display: var(--font-gaegu), sans-serif;
 }
 
@@ -17,6 +17,18 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+@keyframes glow-card {
+  to {
+    offset-distance: 100%;
+  }
+}
+.animate-glow-card {
+  animation-name: glow-card;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* no animation-duration here — GlowCard sets it inline per-glow via animationDuration */
 }
 
 body {
