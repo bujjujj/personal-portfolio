@@ -1,11 +1,13 @@
 // data/portfolio.ts
 export const personalInfo = {
-  name: "chris zhang",
-  role: "university student, software developer, machine learning engineer",
-  bio: "i am a rising senior at the University of Maryland, College Park. i'm studying Computer Science with a concentration in Machine Learning, and also pursuing a business minor. i'm very passionate about exploring the intersection between AI and music.",
+  name: "Chris Zhang",
+  role: "",
+  bio: "ML/AI engineer and full-stack developer with a focus on audio processing. I like building things that turn signals into something meaningful, from real-time audio pipelines to the apps that sit on top of them.",
   email: "chris.jien.zhang@gmail.com",
   github: "https://github.com/bujjujj",
   linkedin: "https://www.linkedin.com/in/cjienz/",
+  university: "University of Maryland, College Park",
+  major: "Computer Science",
 }
 
 export const experiences = [

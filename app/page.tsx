@@ -9,6 +9,26 @@ const fadeUp: Variants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 }
 
+const DrawOutlineButton = ({ text, onClick, className }: { text: string; onClick?: () => void; className?: string}) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`group relative px-4 py-2 font-bold text-lg md:text-xl text-white transition-colors duration-[340ms] hover:text-[#8E5404] ${className || ""}`}
+    >
+      <span>{text}</span>
+
+      {/* TOP */}
+      <span className="absolute left-0 top-0 h-[2px] w-0 bg-[#8E5404] transition-all duration-85 group-hover:w-full" />
+      {/* RIGHT */}
+      <span className="absolute right-0 top-0 h-0 w-[2px] bg-[#8E5404] transition-all delay-85 duration-85 group-hover:h-full" />
+      {/* BOTTOM */}
+      <span className="absolute bottom-0 right-0 h-[2px] w-0 bg-[#8E5404] transition-all delay-170 duration-85 group-hover:w-full" />
+      {/* LEFT */}
+      <span className="absolute bottom-0 left-0 h-0 w-[2px] bg-[#8E5404] transition-all delay-255 duration-85 group-hover:h-full" />
+    </button>
+  );
+};
+
 function TiltWrapper({ children, disabled = false }: { children: React.ReactNode, disabled?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   
@@ -66,7 +86,6 @@ function ExpandableExperience({ exp }: { exp: any }) {
   return (
     <motion.div layout className="w-full relative z-10">
       <TiltWrapper disabled={isOpen}>
-        {/* UPDATED: Increased padding to p-6 md:p-8 and rounded-3xl to make the base card a larger frame */}
         <motion.div
           layoutId={`popover-base-${uniqueId}`}
           className={`w-full rounded-3xl transition-colors ${
@@ -132,44 +151,85 @@ function ExpandableExperience({ exp }: { exp: any }) {
 }
 
 export default function Home() {
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <ShaderBackground>
-      <div className="w-full min-h-screen py-12 px-4 md:px-8 lg:py-24">
-        
+      
+      {/* NAVBAR */}
+      <motion.nav 
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-5 bg-[#32000C] border-b border-white/20 shadow-lg"
+      >
+        <DrawOutlineButton 
+          text={personalInfo.name} 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+          className="!text-4xl md:!text-5xl"
+        />
+
+        <div className="hidden md:flex gap-6">
+          {['Experience', 'Projects', 'Skills'].map((item) => (
+            <DrawOutlineButton 
+              key={item} 
+              text={item} 
+              onClick={() => scrollToSection(item.toLowerCase())} 
+              className="!text-3xl"
+            />
+          ))}
+        </div>
+      </motion.nav>
+
+      <div className="w-full min-h-screen py-12 pt-32 px-4 md:px-8 lg:py-32">
         <main className="max-w-5xl mx-auto p-8 md:p-16 lg:p-24 rounded-[3rem] bg-black/20 backdrop-blur-md border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.3)] space-y-32 relative z-20">
           
           {/* HERO SECTION */}
           <motion.section 
             initial="hidden" animate="visible" variants={fadeUp}
-            className="flex flex-col-reverse md:flex-row items-start justify-between gap-8 relative z-20"
+            className="flex flex-col relative z-20"
           >
-            <div className="max-w-2xl">
-              <h1 className="text-5xl md:text-7xl font-display tracking-tight mb-4">
-                Hi, I'm <span className="font-bold">{personalInfo.name}</span>
-              </h1>
-              <p className="text-2xl text-white/90 mb-8">{personalInfo.role}</p>
-              <p className="text-xl text-white leading-relaxed mb-8">{personalInfo.bio}</p>
-              
-              <div className="flex gap-4">
-                <a href={`mailto:${personalInfo.email}`} className="p-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer text-white hover:scale-105 active:scale-95">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                </a>
-                <a href={personalInfo.github} target="_blank" rel="noreferrer" className="p-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer text-white hover:scale-105 active:scale-95">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                </a>
-                <a href={personalInfo.linkedin} target="_blank" rel="noreferrer" className="p-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer text-white hover:scale-105 active:scale-95">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
-                </a>
+            <div className="flex flex-col-reverse md:flex-row items-start justify-between gap-8">
+              <div className="max-w-2xl">
+                <h1 className="text-5xl md:text-6xl font-display tracking-tight mb-4">
+                  Hi, I'm <span className="font-bold">{personalInfo.name}</span>!
+                </h1>
+                <p className="text-2xl text-white/90 mb-8">{personalInfo.role}</p>
+                <p className="text-xl text-white leading-relaxed mb-8">{personalInfo.bio}</p>
+              </div>
+ 
+              <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border border-white/20 bg-white/5 backdrop-blur-xl shrink-0 relative z-20 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">Headshot</div>
               </div>
             </div>
-            
-            <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border border-white/20 bg-white/5 backdrop-blur-xl shrink-0 relative z-20 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-              <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">Headshot</div>
+ 
+            <div className="flex gap-5 flex-wrap items-center mt-8 w-full">
+              <div className="flex items-center gap-3 px-6 py-4 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+                <span className="text-lg font-medium leading-tight whitespace-nowrap">
+                  {personalInfo.university}
+                  <span className="text-white/60"> · {personalInfo.major}</span>
+                </span>
+              </div>
+              <a href={`mailto:${personalInfo.email}`} className="w-14 h-14 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer text-white hover:scale-105 active:scale-95 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </a>
+              <a href={personalInfo.github} target="_blank" rel="noreferrer" className="w-14 h-14 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer text-white hover:scale-105 active:scale-95 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+              </a>
+              <a href={personalInfo.linkedin} target="_blank" rel="noreferrer" className="w-14 h-14 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer text-white hover:scale-105 active:scale-95 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+              </a>
             </div>
           </motion.section>
 
           {/* EXPERIENCE SECTION */}
-          <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20">
+          <motion.section id="experience" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
             <h2 className="text-4xl font-bold font-display text-white mb-8 border-b border-white/20 pb-4">Experience</h2>
             <div className="space-y-12 flex flex-col">
               {experiences.map((exp) => (
@@ -179,19 +239,16 @@ export default function Home() {
           </motion.section>
 
           {/* PROJECTS SECTION */}
-          <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20">
+          <motion.section id="projects" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
             <h2 className="text-4xl font-bold font-display text-white mb-8 border-b border-white/20 pb-4">Selected Projects</h2>
-            {/* UPDATED: Increased grid gap to gap-12 so the larger foundation cards don't touch */}
             <div className="grid md:grid-cols-2 gap-12">
               {projects.map((proj) => (
                 <TiltWrapper key={proj.id}>
-                  {/* UPDATED: Added p-6 md:p-8 and rounded-3xl to increase foundation card size */}
                   <a 
                     href={proj.link} 
                     style={{ transformStyle: "preserve-3d" }}
                     className="block group relative h-full w-full rounded-3xl bg-white/5 border border-white/10 p-6 md:p-8 hover:border-white/30 transition-colors"
                   >
-                    
                     <div 
                       style={{ transform: "translateZ(60px)", transformStyle: "preserve-3d" }} 
                       className="h-full w-full flex flex-col rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 p-6 shadow-2xl transition-colors group-hover:border-white/30"
@@ -214,7 +271,7 @@ export default function Home() {
           </motion.section>
 
           {/* SKILLS SECTION */}
-          <motion.section initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20">
+          <motion.section id="skills" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
             <h2 className="text-4xl font-bold font-display text-white mb-8 border-b border-white/20 pb-4">Skills</h2>
             <div className="flex flex-wrap gap-4">
               {skills.map((skill, index) => (
@@ -224,6 +281,31 @@ export default function Home() {
               ))}
             </div>
           </motion.section>
+
+          {/* FOOTNOTE SECTION */}
+          <footer className="relative z-20 pt-12 mt-12 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-white/50 text-sm font-medium tracking-wide">
+              © {new Date().getFullYear()} {personalInfo.name}. All rights reserved.
+            </p>
+            <div className="flex gap-8">
+              <a 
+                href={personalInfo.github} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-white/60 hover:text-white transition-colors text-sm uppercase tracking-widest font-bold"
+              >
+                GitHub
+              </a>
+              <a 
+                href={personalInfo.linkedin} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-white/60 hover:text-white transition-colors text-sm uppercase tracking-widest font-bold"
+              >
+                LinkedIn
+              </a>
+            </div>
+          </footer>
 
         </main>
       </div>
