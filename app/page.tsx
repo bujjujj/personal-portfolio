@@ -1,9 +1,156 @@
 "use client"
 import { motion, useMotionTemplate, useMotionValue, useSpring, Variants, AnimatePresence } from "framer-motion"
-import { useId, useRef, useState } from "react"
+import { useId, useRef, useState, useEffect } from "react"
 import { ShaderBackground } from "../components/ShaderBackground"
 import { GlowCard } from "../components/GlowCard"
 import { personalInfo, experiences, projects, skills } from "../data/portfolio"
+
+function SectionHeader({ title }: { title: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const card = canvas.parentElement!
+    const dpr = window.devicePixelRatio || 1
+
+    const rect = card.getBoundingClientRect()
+    canvas.width  = rect.width  * dpr
+    canvas.height = rect.height * dpr
+    canvas.style.width  = rect.width  + "px"
+    canvas.style.height = rect.height + "px"
+
+    const ctx = canvas.getContext("2d")!
+    ctx.scale(dpr, dpr)
+
+    const S        = 36   // square side length (px)
+    const HOLD_MS  = 160  // how long each pose is held
+    const TRANS_MS = 90   // transition duration
+
+    const STEP_MS = HOLD_MS + TRANS_MS
+
+    // Returns the 3 vertices of one quadrant-triangle of a square
+    // centered at (cx, cy) with side S, for the given pose.
+    // pose: 0=LEFT, 1=BOTTOM, 2=RIGHT, 3=TOP
+    function getVerts(cx: number, cy: number, pose: number): [number, number][] {
+      const h = S / 2
+      const tl: [number,number] = [cx - h, cy - h]
+      const tr: [number,number] = [cx + h, cy - h]
+      const bl: [number,number] = [cx - h, cy + h]
+      const br: [number,number] = [cx + h, cy + h]
+      const c:  [number,number] = [cx, cy]
+      if (pose === 0) return [c, tl, bl]  // LEFT
+      if (pose === 1) return [c, bl, br]  // BOTTOM
+      if (pose === 2) return [c, br, tr]  // RIGHT
+      return [c, tr, tl]                  // TOP (pose === 3)
+    }
+
+    function lerpVerts(
+      a: [number,number][],
+      b: [number,number][],
+      t: number
+    ): [number,number][] {
+      return a.map((v, i) => [
+        v[0] + (b[i][0] - v[0]) * t,
+        v[1] + (b[i][1] - v[1]) * t,
+      ])
+    }
+
+    function easeInOut(t: number) {
+      return t < 0.5 ? 2*t*t : 1 - 2*(1-t)*(1-t)
+    }
+
+    let startTime: number | null = null
+    let rafId: number
+
+    const draw = (ts: number) => {
+      if (!startTime) startTime = ts
+      const elapsed = ts - startTime
+
+      const W = canvas.width  / dpr
+      const H = canvas.height / dpr
+      const cy = H / 2
+
+      ctx.clearRect(0, 0, W, H)
+
+      // Each pass = 3 steps: LEFT, MID (bottom or top), RIGHT
+      // After RIGHT the square advances by S and resets to LEFT
+      const msPerPass    = 3 * STEP_MS
+      const totalPasses  = Math.ceil((W + S * 2) / S) + 1
+      const loopMs       = totalPasses * msPerPass
+
+      const t_loop    = elapsed % loopMs
+      const passIndex = Math.floor(t_loop / msPerPass)
+      const t_inPass  = t_loop - passIndex * msPerPass
+
+      const stepIndex = Math.floor(t_inPass / STEP_MS)
+      const t_inStep  = t_inPass - stepIndex * STEP_MS
+
+      const sqCx  = S * 0.5 + passIndex * S
+      const midPose = passIndex % 2 === 0 ? 1 : 3   // alternate BOTTOM / TOP
+      const poseSeq = [0, midPose, 2]
+
+      const currentPose = poseSeq[Math.min(stepIndex, 2)]
+      const nextPose    = stepIndex < 2 ? poseSeq[stepIndex + 1] : 0
+
+      const nextSqCx = sqCx + S
+
+      let verts: [number,number][]
+
+      if (t_inStep < HOLD_MS) {
+        verts = getVerts(sqCx, cy, currentPose)
+      } else {
+        const rawT  = (t_inStep - HOLD_MS) / TRANS_MS
+        const lerpT = easeInOut(Math.min(rawT, 1))
+        const vertsA = getVerts(sqCx, cy, currentPose)
+        const nextCx = currentPose === 2 ? nextSqCx : sqCx
+        const vertsB = getVerts(nextCx, cy, nextPose)
+        verts = lerpVerts(vertsA, vertsB, lerpT)
+      }
+
+      const minX = Math.min(...verts.map(v => v[0]))
+      const maxX = Math.max(...verts.map(v => v[0]))
+      if (maxX >= 0 && minX <= W) {
+        ctx.beginPath()
+        ctx.moveTo(verts[0][0], verts[0][1])
+        ctx.lineTo(verts[1][0], verts[1][1])
+        ctx.lineTo(verts[2][0], verts[2][1])
+        ctx.closePath()
+        ctx.fillStyle   = "rgba(245, 235, 215, 0.82)"
+        ctx.strokeStyle = "rgba(210, 190, 165, 0.5)"
+        ctx.lineWidth   = 1
+        ctx.fill()
+        ctx.stroke()
+      }
+
+      rafId = requestAnimationFrame(draw)
+    }
+
+    rafId = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(rafId)
+  }, [])
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl mb-8"
+      style={{
+        background: "#32000c8a",
+        border: "1px solid #8E5404",
+        backdropFilter: "blur(12px)",
+        padding: "18px 28px",
+        minHeight: "70px",
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+      />
+      <h2 className="text-4xl font-bold font-display text-white relative z-10">{title}</h2>
+    </div>
+  )
+}
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -210,7 +357,18 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
                   className="overflow-hidden"
                 >
                   <div className="pt-6 mt-6 border-t border-white/10">
-                    <p className="text-lg text-white/95 leading-relaxed mb-6">{proj.description}</p>
+                    {Array.isArray(proj.description) ? (
+                      <ul className="space-y-3 mb-6">
+                        {proj.description.map((point: string, i: number) => (
+                          <li key={i} className="flex gap-3 text-lg text-white/95 leading-relaxed">
+                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
+                            {point}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-lg text-white/95 leading-relaxed mb-6">{proj.description}</p>
+                    )}
                     <div className="flex justify-between items-center">
                       {proj.link && proj.link !== "#" && (
                         <a
@@ -297,7 +455,7 @@ export default function Home() {
             >
               <div className="flex flex-col-reverse md:flex-row items-start justify-between gap-8">
                 <div className="max-w-2xl">
-                  <h1 className="text-5xl md:text-5xl font-display tracking-tight mb-4">
+                  <h1 className="text-5xl md:text-6xl font-display tracking-tight mb-4">
                     Hi, I'm <span className="font-bold">{personalInfo.name}</span>!
                   </h1>
                   <p className="text-2xl text-white/90 mb-8">{personalInfo.role}</p>
@@ -305,7 +463,7 @@ export default function Home() {
                 </div>
 
                 {/* HEADSHOT */}
-                <div className="w-54 h-54 md:w-90 md:h-82 rounded-full overflow-hidden border border-white/20 bg-white/5 backdrop-blur-xl shrink-0 relative z-20 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                <div className="w-48 h-51 md:w-72 md:h-77 rounded-full overflow-hidden border border-white/20 bg-white/5 backdrop-blur-xl shrink-0 relative z-20 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
                   {personalInfo.headshot ? (
                     <img
                       src={personalInfo.headshot}
@@ -350,7 +508,7 @@ export default function Home() {
 
             {/* EXPERIENCE SECTION */}
             <motion.section id="experience" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
-              <h2 className="text-4xl font-bold font-display text-white mb-8 border-b border-white/20 pb-4">Experience</h2>
+              <SectionHeader title="Experience" />
               <div className="space-y-12 flex flex-col">
                 {experiences.map((exp) => (
                   <ExpandableExperience key={exp.id} exp={exp} />
@@ -360,7 +518,7 @@ export default function Home() {
 
             {/* PROJECTS SECTION */}
             <motion.section id="projects" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
-              <h2 className="text-4xl font-bold font-display text-white mb-8 border-b border-white/20 pb-4">Selected Projects</h2>
+              <SectionHeader title="Selected Projects" />
               <div className="space-y-12 flex flex-col">
                 {projects.map((proj, i) => (
                   <ExpandableProject key={proj.id} proj={proj} index={i} />
@@ -370,7 +528,7 @@ export default function Home() {
 
             {/* SKILLS SECTION */}
             <motion.section id="skills" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
-              <h2 className="text-4xl font-bold font-display text-white mb-8 border-b border-white/20 pb-4">Skills</h2>
+              <SectionHeader title="Skills" />
               <div className="flex flex-wrap gap-4">
                 {skills.map((skill, index) => (
                   <span key={index} className="px-6 py-3 rounded-full bg-white/5 border border-white/20 text-lg text-white hover:bg-white/20 transition-colors cursor-default backdrop-blur-sm shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 duration-200">

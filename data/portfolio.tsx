@@ -50,7 +50,11 @@ export const projects = [
   {
     id: 1,
     title: "Personal Playlist Divider",
-    description: "Automates music library organization into 11 personalized categories using a custom sonic fingerprint pipeline and a trained Random Forest classifier.",
+    description: [
+        "Automates music library organization into 11 personalized categories using a custom sonic fingerprint pipeline and a trained Random Forest classifier.",
+        "",
+        "",
+    ],
     skills: ["spotipy", "pandas", "librosa", "scikit-learn", "PyTorch", "Flask", "Socket.io"],
     link: "#",
     thumbnail: "/images/thumbnails/playlist-divider.png",
@@ -58,7 +62,11 @@ export const projects = [
   {
     id: 2,
     title: "Mini Shazam",
-    description: "A full-stack audio fingerprinting app that identifies songs in milliseconds using spectral constellation maps and combinatorial hashing.",
+    description: [
+        "A full-stack audio fingerprinting app that identifies songs in milliseconds using spectral constellation maps and combinatorial hashing.",
+        "",
+        "",
+    ],
     skills: ["React", "FastAPI", "librosa", "NumPy", "SQLite", "yt_dlp"],
     link: "#",
     thumbnail: "/images/thumbnails/mini-shazam.png",  // Place at public/images/thumbnails/mini-shazam.png
@@ -66,7 +74,11 @@ export const projects = [
   {
     id: 3,
     title: "Spectrogram Analyzer",
-    description: "Deep learning pipeline converting raw audio into Mel-spectrograms for multi-label genre/mood classification, with a Flask app for real-time inference.",
+    description: [
+        "Deep learning pipeline converting raw audio into Mel-spectrograms for multi-label genre/mood classification, with a Flask app for real-time inference.",
+        "",
+        "",
+    ],
     skills: ["TensorFlow", "Keras", "librosa", "Flask", "pandas"],
     link: "#",
     thumbnail: "/images/thumbnails/spectrogram.png",
