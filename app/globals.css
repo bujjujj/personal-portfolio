@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-gaegu), serif; /*--font-gamja*/ /*--font-gaegu*/
-  --font-display: var(--font-gaegu), sans-serif;
+  --font-sans: var(--font-figTree), sans-serif; /*--font-gamja*/ /*--font-gaegu*/
+  --font-display: var(--font-figTree), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {

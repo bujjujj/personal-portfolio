@@ -2,7 +2,10 @@
 export const personalInfo = {
   name: "Chris Zhang",
   role: "",
-  bio: "ML/AI engineer and full-stack developer with a focus on audio processing. I'm passionate about the intersection between AI and Music, and I love building things that turn signals into meaningful data, like real-time audio feature extractors.",
+  bio: [
+    "ML/AI engineer and full-stack developer with a focus on audio processing.", 
+    "I'm passionate about the intersection between AI and Music, and I love building things that turn signals into meaningful data, like real-time audio feature extractors."
+  ],
   email: "chris.jien.zhang@gmail.com",
   github: "https://github.com/bujjujj",
   linkedin: "https://www.linkedin.com/in/cjienz/",

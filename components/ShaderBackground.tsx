@@ -24,7 +24,7 @@ export function ShaderBackground({ children }: { children: React.ReactNode }) {
       <div className="fixed inset-0 z-0 pointer-events-none">
         <MeshGradient
           className="absolute inset-0 w-full h-full"
-          colors={["#6f1d1b","#bb9457","#432818","#99582a","#e4b847"]} 
+          colors={["#ecef99","#bcd8b0","#c1e4a4","#9fc99b","#b6e5a3"]} 
           //["#000000", "#1a1a2e", "#ffffff", "#0f3460", "#16213e"] 7/10
           //["#ff7e5f", "#feb47b", "#ff9966", "#ff5e62", "#e65c00"] 8/10
           //["#f7b267","#f79d65","#f4845f","#f27059","#f25c54"] 8.1/10
@@ -34,7 +34,10 @@ export function ShaderBackground({ children }: { children: React.ReactNode }) {
           //["#333745","#e63462","#fe5f55","#c7efcf","#eef5db"] 7.6/10
           //["#dbc2cf","#9fa2b2","#3c7a89","#2e4756","#16262e"] 7.3/10
           //["#dde392","#afbe8f","#7d8570","#646f58","#504b3a"] 7.9/10
-          //["#6f1d1b","#bb9457","#432818","#99582a","#ffe6a7"] 8.1/10
+
+          //["#6f1d1b","#bb9457","#432818","#99582a","#ffe6a7"] 8.1/10 (gold theme)
+
+          //["#e7ef99","#bcd8b0","#c1e4a4","#9fc99b","#b6e5a3"]
           //["#5d2a42","#fb6376","#fcb1a6","#ffdccc","#fff9ec"] 7.5/10
           //["#ceaa7b","#ce9064","#ba5f3b","#9f4c3e","#833920"] 8/10
           

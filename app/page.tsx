@@ -5,6 +5,39 @@ import { ShaderBackground } from "../components/ShaderBackground"
 import { GlowCard } from "../components/GlowCard"
 import { personalInfo, experiences, projects, skills } from "../data/portfolio"
 
+// Centralized Color Palette
+const PALETTE = {
+  navBg: "#652A22bf",           // Deep Olive Green (75% opacity for dense glass)
+  sectionBg: "#652A2280",       // Deep Olive Green (75% opacity)
+  cardFloating: "#652A2270",    // Deep Olive Green (50% opacity for inner frosted card)
+  cardBaseOpen: "rgba(243, 230, 224, 0.10)", // Cream (10% opacity for active/hover outer card)
+  cardBaseClosed: "rgba(243, 230, 224, 0.05)",// Cream (5% opacity for idle outer card)
+  gold: "#898C31",
+  glowLight: "#47591d",
+  triangleFill: "rgba(243, 230, 224, 0.82)",
+  triangleStroke: "rgba(166, 206, 226, 0.8)",
+};
+
+/**
+ * const PALETTE = {
+  navBg: "#652A22D9", //D9 for 85% opacity
+  sectionBg: "#652A22D9", //47591D8a
+  gold: "#898C31",
+  glowLight: "#47591D", 
+  triangleFill: "#F3E6E0",
+  triangleStroke: "#A6CEE2",
+};
+ */
+
+/**  
+ * navBg: "#32000C",
+  sectionBg: "#32000c8a",
+  gold: "#8E5404",
+  glowLight: "#F72916",
+  triangleFill: "#f5ebd7d1",
+  triangleStroke: "#d2bea580",
+ */
+
 function SectionHeader({ title }: { title: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -12,26 +45,14 @@ function SectionHeader({ title }: { title: string }) {
     const canvas = canvasRef.current
     if (!canvas) return
     const card = canvas.parentElement!
+    const ctx = canvas.getContext("2d")!
     const dpr = window.devicePixelRatio || 1
 
-    const rect = card.getBoundingClientRect()
-    canvas.width  = rect.width  * dpr
-    canvas.height = rect.height * dpr
-    canvas.style.width  = rect.width  + "px"
-    canvas.style.height = rect.height + "px"
-
-    const ctx = canvas.getContext("2d")!
-    ctx.scale(dpr, dpr)
-
-    const S        = 36   // square side length (px)
-    const HOLD_MS  = 160  // how long each pose is held
-    const TRANS_MS = 90   // transition duration
-
+    const S        = 30   
+    const HOLD_MS  = 160  
+    const TRANS_MS = 90   
     const STEP_MS = HOLD_MS + TRANS_MS
 
-    // Returns the 3 vertices of one quadrant-triangle of a square
-    // centered at (cx, cy) with side S, for the given pose.
-    // pose: 0=LEFT, 1=BOTTOM, 2=RIGHT, 3=TOP
     function getVerts(cx: number, cy: number, pose: number): [number, number][] {
       const h = S / 2
       const tl: [number,number] = [cx - h, cy - h]
@@ -39,10 +60,10 @@ function SectionHeader({ title }: { title: string }) {
       const bl: [number,number] = [cx - h, cy + h]
       const br: [number,number] = [cx + h, cy + h]
       const c:  [number,number] = [cx, cy]
-      if (pose === 0) return [c, tl, bl]  // LEFT
-      if (pose === 1) return [c, bl, br]  // BOTTOM
-      if (pose === 2) return [c, br, tr]  // RIGHT
-      return [c, tr, tl]                  // TOP (pose === 3)
+      if (pose === 0) return [c, tl, bl]  
+      if (pose === 1) return [c, bl, br]  
+      if (pose === 2) return [c, br, tr]  
+      return [c, tr, tl]                  
     }
 
     function lerpVerts(
@@ -64,17 +85,32 @@ function SectionHeader({ title }: { title: string }) {
     let rafId: number
 
     const draw = (ts: number) => {
+      rafId = requestAnimationFrame(draw)
+      
+      const rect = card.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return
+
+      const targetW = Math.floor(rect.width * dpr)
+      const targetH = Math.floor(rect.height * dpr)
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW
+        canvas.height = targetH
+        canvas.style.width = rect.width + "px"
+        canvas.style.height = rect.height + "px"
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.scale(dpr, dpr)
+      }
+
+      const W = rect.width
+      const H = rect.height
+      const cy = H / 2
+
       if (!startTime) startTime = ts
       const elapsed = ts - startTime
 
-      const W = canvas.width  / dpr
-      const H = canvas.height / dpr
-      const cy = H / 2
-
       ctx.clearRect(0, 0, W, H)
 
-      // Each pass = 3 steps: LEFT, MID (bottom or top), RIGHT
-      // After RIGHT the square advances by S and resets to LEFT
       const msPerPass    = 3 * STEP_MS
       const totalPasses  = Math.ceil((W + S * 2) / S) + 1
       const loopMs       = totalPasses * msPerPass
@@ -87,7 +123,7 @@ function SectionHeader({ title }: { title: string }) {
       const t_inStep  = t_inPass - stepIndex * STEP_MS
 
       const sqCx  = S * 0.5 + passIndex * S
-      const midPose = passIndex % 2 === 0 ? 1 : 3   // alternate BOTTOM / TOP
+      const midPose = passIndex % 2 === 0 ? 1 : 3   
       const poseSeq = [0, midPose, 2]
 
       const currentPose = poseSeq[Math.min(stepIndex, 2)]
@@ -116,14 +152,12 @@ function SectionHeader({ title }: { title: string }) {
         ctx.lineTo(verts[1][0], verts[1][1])
         ctx.lineTo(verts[2][0], verts[2][1])
         ctx.closePath()
-        ctx.fillStyle   = "rgba(245, 235, 215, 0.82)"
-        ctx.strokeStyle = "rgba(210, 190, 165, 0.5)"
+        ctx.fillStyle   = PALETTE.triangleFill
+        ctx.strokeStyle = PALETTE.triangleStroke
         ctx.lineWidth   = 1
         ctx.fill()
         ctx.stroke()
       }
-
-      rafId = requestAnimationFrame(draw)
     }
 
     rafId = requestAnimationFrame(draw)
@@ -131,23 +165,34 @@ function SectionHeader({ title }: { title: string }) {
   }, [])
 
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl mb-8"
-      style={{
-        background: "#32000c8a",
-        border: "1px solid #8E5404",
-        backdropFilter: "blur(12px)",
-        padding: "18px 28px",
-        minHeight: "70px",
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
-      />
-      <h2 className="text-4xl font-bold font-display text-white relative z-10">{title}</h2>
+    <div className="flex items-stretch gap-4 mb-6">
+      <div
+        className="rounded-2xl shrink-0 flex items-center justify-center"
+        style={{
+          background: PALETTE.sectionBg,
+          border: `1px solid ${PALETTE.gold}`,
+          backdropFilter: "blur(12px)",
+          padding: "14px 22px", 
+        }}
+      >
+        {/* Increased text size and reduced font-weight to font-light */}
+        <h2 className="text-2xl md:text-3xl font-light font-display text-white">{title}</h2>
+      </div>
+
+      <div
+        className="relative overflow-hidden rounded-2xl flex-grow w-full"
+        style={{
+          background: PALETTE.sectionBg,
+          border: `1px solid ${PALETTE.gold}`,
+          backdropFilter: "blur(12px)",
+          minHeight: "60px", 
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+        />
+      </div>
     </div>
   )
 }
@@ -161,13 +206,14 @@ const DrawOutlineButton = ({ text, onClick, className }: { text: string; onClick
   return (
     <button
       onClick={onClick}
-      className={`group relative px-4 py-2 font-bold text-lg md:text-xl text-white transition-colors duration-[340ms] hover:text-[#8E5404] ${className || ""}`}
+      style={{ "--theme-gold": PALETTE.gold } as React.CSSProperties}
+      className={`group relative px-3 py-1.5 font-medium text-base md:text-lg text-white transition-colors duration-[340ms] hover:text-[var(--theme-gold)] ${className || ""}`}
     >
       <span>{text}</span>
-      <span className="absolute left-0 top-0 h-[2px] w-0 bg-[#8E5404] transition-all duration-85 group-hover:w-full" />
-      <span className="absolute right-0 top-0 h-0 w-[2px] bg-[#8E5404] transition-all delay-85 duration-85 group-hover:h-full" />
-      <span className="absolute bottom-0 right-0 h-[2px] w-0 bg-[#8E5404] transition-all delay-170 duration-85 group-hover:w-full" />
-      <span className="absolute bottom-0 left-0 h-0 w-[2px] bg-[#8E5404] transition-all delay-255 duration-85 group-hover:h-full" />
+      <span style={{ backgroundColor: PALETTE.gold }} className="absolute left-0 top-0 h-[2px] w-0 transition-all duration-85 group-hover:w-full" />
+      <span style={{ backgroundColor: PALETTE.gold }} className="absolute right-0 top-0 h-0 w-[2px] transition-all delay-85 duration-85 group-hover:h-full" />
+      <span style={{ backgroundColor: PALETTE.gold }} className="absolute bottom-0 right-0 h-[2px] w-0 transition-all delay-170 duration-85 group-hover:w-full" />
+      <span style={{ backgroundColor: PALETTE.gold }} className="absolute bottom-0 left-0 h-0 w-[2px] transition-all delay-255 duration-85 group-hover:h-full" />
     </button>
   );
 };
@@ -213,14 +259,24 @@ function ExpandableExperience({ exp }: { exp: any }) {
   const uniqueId = useId()
 
   return (
-    <motion.div layout className="w-full relative z-10">
+    <motion.div 
+      layout 
+      className="w-full relative z-10"
+      // 1. Inject the PALETTE colors as CSS variables
+      style={{
+        "--card-open": PALETTE.cardBaseOpen,
+        "--card-closed": PALETTE.cardBaseClosed,
+        "--card-float": PALETTE.cardFloating,
+      } as React.CSSProperties}
+    >
       <TiltWrapper disabled={isOpen}>
         <motion.div
           layoutId={`exp-base-${uniqueId}`}
           className={`w-full rounded-3xl transition-colors ${
             isOpen
-              ? "bg-white/10 border border-white/20 shadow-2xl p-4 md:p-6"
-              : "bg-white/5 border border-white/10 p-6 md:p-8 cursor-pointer hover:bg-white/10"
+              // 2. Map Tailwind bg classes to the CSS variables
+              ? "bg-[var(--card-open)] border border-white/20 shadow-xl p-3 md:p-5"
+              : "bg-[var(--card-closed)] border border-white/10 p-5 md:p-6 cursor-pointer hover:bg-[var(--card-open)]"
           }`}
           onClick={() => !isOpen && setIsOpen(true)}
           style={{ transformStyle: "preserve-3d" }}
@@ -230,14 +286,15 @@ function ExpandableExperience({ exp }: { exp: any }) {
             animate={{ z: isOpen ? 0 : 60 }}
             style={{ transformStyle: "preserve-3d" }}
             className={`w-full h-full flex flex-col rounded-2xl transition-colors duration-300 ${
-              isOpen ? "bg-transparent p-6" : "bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl p-6"
+              // 3. Map the floating inner card to the CSS variable
+              isOpen ? "bg-transparent p-5" : "bg-[var(--card-float)] backdrop-blur-xl border border-white/10 shadow-2xl p-5"
             }`}
           >
             <motion.div layoutId={`exp-header-${uniqueId}`} className="flex justify-between items-start mb-2">
-              <h3 className="text-3xl font-bold text-white">{exp.role}</h3>
-              <span className="text-lg text-white/80">{exp.duration}</span>
+              <h3 className="text-lg md:text-xl font-medium text-white">{exp.role}</h3>
+              <span className="text-xs md:text-sm text-white/80">{exp.duration}</span>
             </motion.div>
-            <motion.h4 layoutId={`exp-subheader-${uniqueId}`} className="text-xl text-white/90">{exp.company}</motion.h4>
+            <motion.h4 layoutId={`exp-subheader-${uniqueId}`} className="text-sm md:text-base font-normal text-white/90">{exp.company}</motion.h4>
 
             <AnimatePresence>
               {isOpen && (
@@ -248,24 +305,24 @@ function ExpandableExperience({ exp }: { exp: any }) {
                   transition={{ duration: 0.3, type: "spring", bounce: 0.05 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-6 mt-6 border-t border-white/10">
+                  <div className="pt-5 mt-5 border-t border-white/10">
                     {Array.isArray(exp.description) ? (
-                      <ul className="space-y-3 mb-6">
+                      <ul className="space-y-2.5 mb-5">
                         {exp.description.map((point: string, i: number) => (
-                          <li key={i} className="flex gap-3 text-lg text-white/95 leading-relaxed">
-                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
+                          <li key={i} className="flex gap-3 text-xs md:text-sm font-light text-white/95 leading-relaxed">
+                            <span className="mt-2 w-1 h-1 rounded-full bg-white/50 shrink-0" />
                             {point}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-lg text-white/95 leading-relaxed mb-6">{exp.description}</p>
+                      <p className="text-xs md:text-sm font-light text-white/95 leading-relaxed mb-5">{exp.description}</p>
                     )}
                     <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setIsOpen(false) }}
-                        className="px-6 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-95 transition-all text-sm font-medium uppercase tracking-wider"
+                        className="px-5 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-95 transition-all text-[10px] font-normal uppercase tracking-wider"
                       >
                         Shrink
                       </button>
@@ -286,14 +343,24 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
   const uniqueId = useId()
 
   return (
-    <motion.div layout className="w-full relative z-10">
+    <motion.div 
+      layout 
+      className="w-full relative z-10"
+      // 1. Inject the PALETTE colors as CSS variables
+      style={{
+        "--card-open": PALETTE.cardBaseOpen,
+        "--card-closed": PALETTE.cardBaseClosed,
+        "--card-float": PALETTE.cardFloating,
+      } as React.CSSProperties}
+    >
       <TiltWrapper disabled={isOpen}>
         <motion.div
           layoutId={`proj-base-${uniqueId}`}
           className={`w-full rounded-3xl transition-colors ${
             isOpen
-              ? "bg-white/10 border border-white/20 shadow-2xl p-4 md:p-6"
-              : "bg-white/5 border border-white/10 p-6 md:p-8 cursor-pointer hover:bg-white/10"
+              // 2. Map Tailwind bg classes to the CSS variables
+              ? "bg-[var(--card-open)] border border-white/20 shadow-2xl p-4 md:p-6"
+              : "bg-[var(--card-closed)] border border-white/10 p-6 md:p-8 cursor-pointer hover:bg-[var(--card-open)]"
           }`}
           onClick={() => !isOpen && setIsOpen(true)}
           style={{ transformStyle: "preserve-3d" }}
@@ -303,11 +370,11 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
             animate={{ z: isOpen ? 0 : 60 }}
             style={{ transformStyle: "preserve-3d" }}
             className={`w-full h-full flex flex-col rounded-2xl transition-colors duration-300 ${
-              isOpen ? "bg-transparent p-6" : "bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl p-6"
+              // 3. Map the floating inner card to the CSS variable
+              isOpen ? "bg-transparent p-6" : "bg-[var(--card-float)] backdrop-blur-xl border border-white/10 shadow-2xl p-6"
             }`}
           >
             <motion.div layoutId={`proj-summary-${uniqueId}`} className="flex flex-col gap-4">
-              {/* Thumbnail — full width on top */}
               <div className="w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-white/5">
                 {proj.thumbnail ? (
                   <img
@@ -319,26 +386,25 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
                       const parent = (e.currentTarget as HTMLImageElement).parentElement
                       if (parent) {
                         const fallback = document.createElement("div")
-                        fallback.className = "w-full h-full flex items-center justify-center text-white/30 text-xs uppercase tracking-widest"
+                        fallback.className = "w-full h-full flex items-center justify-center text-white/30 text-[10px] uppercase tracking-widest"
                         fallback.textContent = "Thumbnail"
                         parent.appendChild(fallback)
                       }
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/30 text-xs uppercase tracking-widest">
+                  <div className="w-full h-full flex items-center justify-center text-white/30 text-[10px] uppercase tracking-widest">
                     Thumbnail
                   </div>
                 )}
               </div>
 
-              {/* Title + description + skills below */}
               <div className="flex flex-col gap-2">
-                <h3 className="text-2xl md:text-3xl font-bold text-white leading-tight">{proj.title}</h3>
-                <p className="text-base text-white/70 leading-snug line-clamp-2">{proj.description}</p>
+                <h3 className="text-lg md:text-xl font-medium text-white leading-tight">{proj.title}</h3>
+                <p className="text-xs md:text-sm font-light text-white/70 leading-snug line-clamp-2">{proj.description}</p>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {proj.skills?.map((s: string) => (
-                    <span key={s} className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 font-mono tracking-wide">
+                    <span key={s} className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] text-white/80 font-mono tracking-wide">
                       {s}
                     </span>
                   ))}
@@ -346,7 +412,6 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
               </div>
             </motion.div>
 
-            {/* Expanded: full description + link */}
             <AnimatePresence>
               {isOpen && (
                 <motion.div
@@ -360,14 +425,14 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
                     {Array.isArray(proj.description) ? (
                       <ul className="space-y-3 mb-6">
                         {proj.description.map((point: string, i: number) => (
-                          <li key={i} className="flex gap-3 text-lg text-white/95 leading-relaxed">
-                            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
+                          <li key={i} className="flex gap-3 text-xs md:text-sm font-light text-white/95 leading-relaxed">
+                            <span className="mt-2 w-1 h-1 rounded-full bg-white/50 shrink-0" />
                             {point}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-lg text-white/95 leading-relaxed mb-6">{proj.description}</p>
+                      <p className="text-xs md:text-sm font-light text-white/95 leading-relaxed mb-6">{proj.description}</p>
                     )}
                     <div className="flex justify-between items-center">
                       {proj.link && proj.link !== "#" && (
@@ -376,7 +441,7 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all text-sm font-medium"
+                          className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all text-xs font-normal"
                         >
                           View Project
                           <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
@@ -385,7 +450,7 @@ function ExpandableProject({ proj, index }: { proj: any; index: number }) {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setIsOpen(false) }}
-                        className="ml-auto px-6 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-95 transition-all text-sm font-medium uppercase tracking-wider"
+                        className="ml-auto px-6 py-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:scale-95 transition-all text-xs font-normal uppercase tracking-wider"
                       >
                         Shrink
                       </button>
@@ -410,25 +475,25 @@ export default function Home() {
   return (
     <ShaderBackground>
 
-      {/* NAVBAR */}
       <motion.nav
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-5 bg-[#32000C] border-b border-white/20 shadow-lg"
+        style={{ backgroundColor: PALETTE.navBg }}
+        className="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] md:w-[60%] z-50 flex justify-between items-center px-6 md:px-8 py-2 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl"
       >
         <DrawOutlineButton
           text={personalInfo.name}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="!text-4xl md:!text-5xl"
+          className="!text-2xl md:!text-3xl"
         />
-        <div className="hidden md:flex gap-6">
+        <div className="hidden md:flex gap-4">
           {['Experience', 'Projects', 'Skills'].map((item) => (
             <DrawOutlineButton
               key={item}
               text={item}
               onClick={() => scrollToSection(item.toLowerCase())}
-              className="!text-3xl"
+              className="!text-base md:!text-lg" 
             />
           ))}
         </div>
@@ -438,12 +503,12 @@ export default function Home() {
         <GlowCard
           className="max-w-5xl mx-auto rounded-[3rem]"
           lights={[
-            { width: 550, height: 13, color: "#F72916", duration: 5, startOffset: 0 },
-            { width: 550, height: 13, color: "#F72916", duration: 5, startOffset: 33 },
-            { width: 550, height: 13, color: "#F72916", duration: 5, startOffset: 66 },
-            { width: 550, height: 13, color: "#F72916", duration: 5, startOffset: 99 },
-            { width: 550, height: 13, color: "#F72916", duration: 5, startOffset: 132 },
-            { width: 550, height: 13, color: "#F72916", duration: 5, startOffset: 165 }
+            { width: 550, height: 13, color: PALETTE.glowLight, duration: 5, startOffset: 0 },
+            { width: 550, height: 13, color: PALETTE.glowLight, duration: 5, startOffset: 33 },
+            { width: 550, height: 13, color: PALETTE.glowLight, duration: 5, startOffset: 66 },
+            { width: 550, height: 13, color: PALETTE.glowLight, duration: 5, startOffset: 99 },
+            { width: 550, height: 13, color: PALETTE.glowLight, duration: 5, startOffset: 132 },
+            { width: 550, height: 13, color: PALETTE.glowLight, duration: 5, startOffset: 165 }
           ]}
         >
           <main className="max-w-5xl mx-auto p-8 md:p-16 lg:p-24 rounded-[3rem] bg-black/20 backdrop-blur-md border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.3)] space-y-32 relative z-20">
@@ -455,11 +520,24 @@ export default function Home() {
             >
               <div className="flex flex-col-reverse md:flex-row items-start justify-between gap-8">
                 <div className="max-w-2xl">
-                  <h1 className="text-5xl md:text-6xl font-display tracking-tight mb-4">
-                    Hi, I'm <span className="font-bold">{personalInfo.name}</span>!
+                  {/* Increased Text Sizes */}
+                  <h1 className="text-4xl md:text-5xl font-display font-medium tracking-tight mb-4">
+                    Hi, I'm <span className="font-medium">{personalInfo.name}</span>!
                   </h1>
-                  <p className="text-2xl text-white/90 mb-8">{personalInfo.role}</p>
-                  <p className="text-xl text-white leading-relaxed mb-8">{personalInfo.bio}</p>
+                  <p className="text-xl md:text-2xl font-light text-white/90 mb-8">{personalInfo.role}</p>
+                  
+                  {/* Bio formatting added: supports string arrays or pre-wrap \n strings */}
+                  <div className="text-lg font-light text-white leading-relaxed mb-8">
+                    {Array.isArray(personalInfo.bio) ? (
+                      <div className="space-y-4">
+                        {personalInfo.bio.map((paragraph: string, i: number) => (
+                          <p key={i}>{paragraph}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{personalInfo.bio}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* HEADSHOT */}
@@ -474,14 +552,14 @@ export default function Home() {
                         const parent = (e.currentTarget as HTMLImageElement).parentElement
                         if (parent) {
                           const fallback = document.createElement("div")
-                          fallback.className = "w-full h-full flex items-center justify-center text-white/50 text-sm"
+                          fallback.className = "w-full h-full flex items-center justify-center text-white/50 text-xs"
                           fallback.textContent = "Headshot"
                           parent.appendChild(fallback)
                         }
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">Headshot</div>
+                    <div className="w-full h-full flex items-center justify-center text-white/50 text-xs">Headshot</div>
                   )}
                 </div>
               </div>
@@ -489,7 +567,7 @@ export default function Home() {
               <div className="flex flex-wrap items-center justify-between mt-8 w-full gap-4">
                 <div className="flex items-center gap-3 px-7 py-5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
-                  <span className="text-xl font-medium leading-tight whitespace-nowrap">
+                  <span className="text-base font-normal leading-tight whitespace-nowrap">
                     {personalInfo.university}
                     <span className="text-white/60"> · {personalInfo.major}</span>
                   </span>
@@ -509,7 +587,7 @@ export default function Home() {
             {/* EXPERIENCE SECTION */}
             <motion.section id="experience" initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp} className="relative z-20 scroll-mt-32">
               <SectionHeader title="Experience" />
-              <div className="space-y-12 flex flex-col">
+              <div className="space-y-8 flex flex-col">
                 {experiences.map((exp) => (
                   <ExpandableExperience key={exp.id} exp={exp} />
                 ))}
@@ -531,7 +609,7 @@ export default function Home() {
               <SectionHeader title="Skills" />
               <div className="flex flex-wrap gap-4">
                 {skills.map((skill, index) => (
-                  <span key={index} className="px-6 py-3 rounded-full bg-white/5 border border-white/20 text-lg text-white hover:bg-white/20 transition-colors cursor-default backdrop-blur-sm shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 duration-200">
+                  <span key={index} className="px-6 py-3 rounded-full bg-white/5 border border-white/20 text-sm font-light text-white hover:bg-white/20 transition-colors cursor-default backdrop-blur-sm shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 duration-200">
                     {skill}
                   </span>
                 ))}
@@ -540,12 +618,12 @@ export default function Home() {
 
             {/* FOOTER */}
             <footer className="relative z-20 pt-12 mt-12 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
-              <p className="text-white/50 text-sm font-medium tracking-wide">
+              <p className="text-white/50 text-xs font-normal tracking-wide">
                 © {new Date().getFullYear()} {personalInfo.name}. All rights reserved.
               </p>
               <div className="flex gap-8">
-                <a href={personalInfo.github} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white transition-colors text-sm uppercase tracking-widest font-bold">GitHub</a>
-                <a href={personalInfo.linkedin} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white transition-colors text-sm uppercase tracking-widest font-bold">LinkedIn</a>
+                <a href={personalInfo.github} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white transition-colors text-xs uppercase tracking-widest font-medium">GitHub</a>
+                <a href={personalInfo.linkedin} target="_blank" rel="noreferrer" className="text-white/60 hover:text-white transition-colors text-xs uppercase tracking-widest font-medium">LinkedIn</a>
               </div>
             </footer>
 

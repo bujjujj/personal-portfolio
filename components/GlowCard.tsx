@@ -119,8 +119,8 @@ export function GlowCard({
         <path
           ref={debugPathRef}
           fill="none"
-          stroke="#7b0305"
-          strokeWidth={2}
+          stroke="#47591D" /**COLOR OF BORDER*/
+          strokeWidth={0}
         />
       </svg>
 
